@@ -1,37 +1,43 @@
 import pandas as pd
 
-def clean(df:pd.DataFrame) ->pd.DataFrame:
-  df = df.reset_index()
 
-  df.columns=[
-    str(col[0]).lower()
-    if isinstance(col,tuple)
-    else str(col).lower()
-    for col in df.columns
-  ]
-    if "datetime" in df.columns:                                                                                                                                                      df = df.rename(columns={"datetime": "date"})
+def clean(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.reset_index()
 
-  required=["date",
-          "open",
-          "high",
-          "low",
-          "close",
-          "volume"
-          ]
-  df=df[required]
+    df.columns = [
+        str(col[0]).lower()
+        if isinstance(col, tuple)
+        else str(col).lower()
+        for col in df.columns
+    ]
 
-  df["date"]=pd.to_datetime(df["date"])
+    if "datetime" in df.columns:
+        df = df.rename(columns={"datetime": "date"})
 
-  df=df.sort_values("date")
-  df=df.reset_index(drop=True)
+    assert "date" in df.columns, "'date' column must exist after cleaning"
 
-  duplicates = df[df.duplicated(subset=["date"])]
+    required = [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+    ]
+    df = df[required]
 
-  print("Duplicate rows:", len(duplicates))
-  df = df.drop_duplicates(subset=["date"])
+    df["date"] = pd.to_datetime(df["date"])
 
-  print(df.isna().sum())
-  df = df.dropna(
-    subset=["open", "high", "low", "close"]
-  )
-  return df
+    df = df.sort_values("date")
+    df = df.reset_index(drop=True)
+
+    duplicates = df[df.duplicated(subset=["date"])]
+
+    print("Duplicate rows:", len(duplicates))
+    df = df.drop_duplicates(subset=["date"])
+
+    print(df.isna().sum())
+    df = df.dropna(
+        subset=["open", "high", "low", "close"]
+    )
+    return df
