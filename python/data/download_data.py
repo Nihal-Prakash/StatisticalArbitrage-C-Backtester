@@ -18,7 +18,7 @@ def download_symbol(symbol: str, period: str = "30d", interval: str = "1d"):
   )
 
 def main():
-        os.makedirs("datasets/raw", exist_ok=True)
+        os.makedirs("../../datasets/raw/", exist_ok=True)
         for symbol in symbols:
              raw=download_symbol(symbol)
              df=clean(raw)
