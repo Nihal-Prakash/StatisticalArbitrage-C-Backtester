@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# CMake
+build/
+cmake-build-*/
+
+# Data/results
+datasets/*
+!datasets/.gitkeep
+
+results/*
+!results/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
