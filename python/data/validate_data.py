@@ -16,5 +16,6 @@ def validate(df:pd.DataFrame) -> None :
     assert (df["high"] >= df["close"]).all()
 
     assert (df["low"] <= df["open"]).all()
+    assert (df["low"] <= df["close"]).all()
 
 

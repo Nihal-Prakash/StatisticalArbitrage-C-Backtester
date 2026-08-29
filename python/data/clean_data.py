@@ -9,6 +9,7 @@ def clean(df:pd.DataFrame) ->pd.DataFrame:
     else str(col).lower()
     for col in df.columns
   ]
+    if "datetime" in df.columns:                                                                                                                                                      df = df.rename(columns={"datetime": "date"})
 
   required=["date",
           "open",

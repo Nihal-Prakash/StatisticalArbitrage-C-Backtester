@@ -4,10 +4,10 @@ import os
 from clean_data import clean
 from validate_data import validate
 
-symbols =[ 
+symbols =( 
         "RELIANCE.NS",
         "TCS.NS" 
-        ]
+)
 def download_symbol(symbol: str, period: str = "30d", interval: str = "1d"):
   return yf.download(
         symbol,
