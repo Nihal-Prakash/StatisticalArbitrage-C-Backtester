@@ -2,17 +2,18 @@ import pandas as pd
 import numpy as np 
 import json
 import os
+from pathlib import Path
 
-symbol_a = "RELIANCE.NS"
-symbol_b = "TCS.NS"
+symbols = json.loads((Path(__file__).parents[1] / "tickers.json").read_text())
+symbol_a, symbol_b = symbols
 
 a = pd.read_csv(
-    "datasets/raw/RELIANCE.NS.csv",
+    f"datasets/raw/{symbol_a}.csv",
     parse_dates = ["date"]
 )
 
 b = pd.read_csv(
-    "datasets/raw/TCS.NS.csv",
+    f"datasets/raw/{symbol_b}.csv",
     parse_dates = ["date"]
 )
 
