@@ -6,30 +6,35 @@ from pathlib import Path
 from clean_data import clean
 from validate_data import validate
 
-symbols = json.loads((Path(__file__).parents[1] / "tickers.json").read_text())
-if not isinstance(symbols, list) or not all(isinstance(symbol, str) and symbol for symbol in symbols):
-    raise ValueError("tickers.json must contain a JSON array of non-empty ticker strings")
+symbols = list(dict.fromkeys(json.loads((Path(__file__).parents[1] / "tickers.json").read_text())))
 
-def download_symbol(symbol: str, period: str = "30d", interval: str = "1d"):
-  return yf.download(
+def download_symbol(symbol: str, period: str = "1d", interval: str = "15m"):
+    return yf.download(
         symbol,
         period=period,
         interval=interval,
         auto_adjust=False,
         progress=False
-  )
+    )
 
 def main():
-    os.makedirs("datasets/raw", exist_ok=True)
+    os.makedirs(Path(__file__).parents[2] / "datasets/raw", exist_ok=True)
     for symbol in symbols:
-        raw = download_symbol(symbol)
-        df = clean(raw)
-        validate(df)
+        try:
 
-        df.to_csv(
-            f"datasets/raw/{symbol}.csv",
-            index=False
-        )
+            raw = download_symbol(symbol)
+            if raw.empty:
+                print(f"No data found for {symbol}")
+                continue
+            df = clean(raw)
+            validate(df)
+
+            df.to_csv(
+                Path(__file__).parents[2] / f"datasets/raw/{symbol}.csv",
+                index=False
+            )
+        except Exception as e:
+            print (f"{e}")
 
 
 if __name__ == "__main__":
