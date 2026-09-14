@@ -6,3 +6,4 @@ matplotlib
 yfinance==1.7.0
 jugaad-data==0.35.5
 requests
+pytest

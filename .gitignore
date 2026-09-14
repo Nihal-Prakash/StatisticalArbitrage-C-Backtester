@@ -20,3 +20,6 @@ results/*
 
 # OS
 .DS_Store
+
+#Tests
+python/tests/
