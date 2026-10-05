@@ -9,10 +9,17 @@ struct Trade {
 
   double price;
   int quantity;
+
+  double cashAfter;
+  int positionAfter;
 };
 
 struct EquityPoint {
   std::string date;
+
+  int position;
+  double cash;
+  double marketPrice;
   double equity;
 };
 

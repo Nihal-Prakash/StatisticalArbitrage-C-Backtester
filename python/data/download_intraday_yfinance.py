@@ -1,4 +1,3 @@
-"""Recent 15-minute Yahoo OHLCV. Keep datasets/raw for existing research consumers."""
 import argparse
 from collections import defaultdict
 from datetime import timedelta
@@ -15,7 +14,7 @@ from yfinance.exceptions import YFException, YFRateLimitError
 from _download_common import (ROOT, Summary, atomic_csv, atomic_json, check_output_directory,
                               consolidate_closes, load_tickers, normalize, read_existing, setup_logging)
 
-INTERVAL = "15m"
+INTERVAL = "5m"
 TRANSIENT_STATUSES = {408, 425, 429, 500, 502, 503, 504}
 
 

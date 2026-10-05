@@ -24,7 +24,8 @@ void Backtester::executeBuy(const Bar &bar) {
   portfolio.cash -= cost;
   portfolio.position = quantity;
 
-  portfolio.trades.push_back(Trade{bar.date, "BUY", bar.open, quantity});
+  portfolio.trades.push_back(Trade{bar.date, "BUY", bar.open, quantity,
+                                   portfolio.cash, portfolio.position});
 }
 
 void Backtester::executeSell(const Bar &bar) {
@@ -39,7 +40,8 @@ void Backtester::executeSell(const Bar &bar) {
   portfolio.cash += proceeds;
   portfolio.position = 0;
 
-  portfolio.trades.push_back(Trade{bar.date, "SELL", bar.open, quantity});
+  portfolio.trades.push_back(Trade{bar.date, "SELL", bar.open, quantity,
+                                   portfolio.cash, portfolio.position});
 }
 
 void Backtester::run() {
@@ -52,12 +54,13 @@ void Backtester::run() {
       if (pendingSignal == Signal::BUY) {
         executeBuy(currentBar);
       } else if (pendingSignal == Signal::SELL) {
-        executeBuy(currentBar);
+        executeSell(currentBar);
       }
     }
 
     portfolio.equityCurve.push_back(
-        EquityPoint{currentBar.date, portfolio.equity(currentBar.close)});
+        EquityPoint{currentBar.date, portfolio.position, portfolio.cash,
+                    currentBar.close, portfolio.equity(currentBar.close)});
 
     if (i + 1 < bars.size()) {
       pendingSignal = strategy.generateSignal(bars, i);

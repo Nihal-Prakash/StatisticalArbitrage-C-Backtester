@@ -46,7 +46,7 @@ Signal SmaCross::generateSignal(const std::vector<Bar> &bars,
   if (shortPrevious <= longPrevious && shortCurrent > longCurrent) {
     return Signal::BUY;
   }
-  if (shortPrevious >= longPrevious && shortCurrent > longCurrent) {
+  if (shortPrevious >= longPrevious && shortCurrent < longCurrent) {
     return Signal::SELL;
   }
 
