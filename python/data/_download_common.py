@@ -140,13 +140,17 @@ def atomic_csv(frame: pd.DataFrame, path: Path) -> None:
 
 
 def consolidate_closes(source: Path, destination: Path, symbols: list[str]) -> None:
-    prices = {}
+    prices = []
     for symbol in symbols:
         path = source / f"{symbol}.csv"
         if path.exists():
-            prices[symbol] = pd.read_csv(path, usecols=["date", "close"], parse_dates=["date"]).set_index("date")["close"]
+            data = pd.read_csv(path, usecols=["date", "close", "volume"], parse_dates=["date"])
+            prices.append((data["volume"].mean(), symbol, data.set_index("date")["close"]))
     if prices:
-        frame = pd.DataFrame(prices).sort_index().ffill().bfill().rename_axis("date").reset_index()
+        # Keep only the top 500 companies by average volume for covariance and correlation.
+        frame = pd.DataFrame({symbol: close for _, symbol, close in sorted(
+            prices, key=lambda item: item[0], reverse=True)[:500]})
+        frame = frame.sort_index().ffill().bfill().rename_axis("date").reset_index()
         atomic_csv(frame, destination)
 
 

@@ -79,6 +79,19 @@ class DownloaderTests(unittest.TestCase):
         path.write_text("invalid")
         self.assertIsNone(common.read_existing(path))
 
+    def test_consolidate_closes_uses_top_500_average_volume(self):
+        symbols = [f"S{i}.NS" for i in range(501)]
+        for i, symbol in enumerate(symbols):
+            common.atomic_csv(common.normalize(bars().assign(VOLUME=i + 1)), self.root / f"{symbol}.csv")
+        output = self.root / "consolidated.csv"
+
+        common.consolidate_closes(self.root, output, symbols)
+
+        columns = pd.read_csv(output, nrows=0).columns.tolist()
+        self.assertEqual(len(columns), 501)
+        self.assertNotIn("S0.NS", columns)
+        self.assertIn("S500.NS", columns)
+
     def test_yahoo_multiindex_and_empty_symbol(self):
         data = bars().rename(columns=str.title).rename(columns={"Date": "Datetime"}).set_index("Datetime")
         data.index = pd.to_datetime(data.index).tz_localize("Asia/Kolkata") + pd.Timedelta(hours=9, minutes=15)
@@ -295,7 +308,7 @@ class DownloaderTests(unittest.TestCase):
             self.assertEqual(historical.run(args), 0)
         fetch.assert_called_once_with(args.end)
         self.assertEqual(list(pd.read_csv(args.output / "TCS.NS.csv").columns), common.COLUMNS)
-        self.assertEqual(list(pd.read_csv(args.consolidated).columns), ["date", "TCS.NS", "INFY.NS"])
+        self.assertEqual(list(pd.read_csv(args.consolidated).columns), ["date", "INFY.NS", "TCS.NS"])
 
     def test_bhavcopy_eq_filtering(self):
         day = date(2026, 9, 8)
