@@ -65,9 +65,9 @@ def normalize(frame: pd.DataFrame, intraday: bool = False) -> pd.DataFrame:
             dates = dates.dt.tz_convert("Asia/Kolkata")
         elif intraday:
             dates = dates.dt.tz_localize("Asia/Kolkata")
-        if intraday and ((dates == dates.dt.normalize()).any() or (dates.dt.minute % 15 != 0).any()
+        if intraday and ((dates == dates.dt.normalize()).any() or (dates.dt.minute % 5 != 0).any()
                          or (dates.dt.second != 0).any()):
-            raise ValueError("expected 15-minute intraday timestamps, not daily dates")
+            raise ValueError("expected 5-minute intraday timestamps, not daily dates")
         if not intraday:
             if dates.dt.tz is not None:
                 dates = dates.dt.tz_localize(None)

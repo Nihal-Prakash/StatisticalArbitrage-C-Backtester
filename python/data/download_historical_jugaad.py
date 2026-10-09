@@ -23,10 +23,9 @@ from _download_common import (ROOT, atomic_csv, atomic_json, check_output_direct
 BHAVCOPY_COLUMNS = ["date", "symbol", "series", "open", "high", "low", "close", "volume", "isin"]
 SCHEMAS = [
     {"TIMESTAMP": "date", "SYMBOL": "symbol", "SERIES": "series", "OPEN": "open",
-     "HIGH": "high", "LOW": "low", "CLOSE": "close", "TOTTRDQTY": "volume", "ISIN": "isin"},
+     "HIGH": "high", "LOW": "low", "CLOSE": "close", "TOTTRDQTY": "volume"},
     {"TradDt": "date", "TckrSymb": "symbol", "SctySrs": "series", "OpnPric": "open",
-     "HghPric": "high", "LwPric": "low", "ClsPric": "close", "TtlTradgVol": "volume",
-     "ISIN": "isin"},
+     "HghPric": "high", "LwPric": "low", "ClsPric": "close", "TtlTradgVol": "volume"},
 ]
 PROVIDER = "jugaad-data-bhavcopy"
 LATEST_SCAN_DAYS = 14
@@ -50,6 +49,7 @@ def normalize_bhavcopy(raw, expected_date: date, logger=None) -> pd.DataFrame:
     if fields is None:
         raise ValueError(f"unsupported bhavcopy columns: {sorted(frame.columns)}")
     data = frame[list(fields)].rename(columns=fields)
+    data["isin"] = frame["ISIN"] if "ISIN" in frame.columns else ""
     for column in ["symbol", "series", "isin"]:
         data[column] = data[column].fillna("").astype(str).str.strip()
     date_format = "%d-%b-%Y" if "TIMESTAMP" in fields else "%Y-%m-%d"
@@ -252,7 +252,7 @@ def parser():
     cli.add_argument("--output", type=Path, default=ROOT / "datasets/historical_daily")
     cli.add_argument("--consolidated", type=Path, default=ROOT / "datasets/historical.csv")
     cli.add_argument("--log-dir", type=Path, default=ROOT / "datasets/logs")
-    cli.add_argument("--start", type=date.fromisoformat, default=date(2010, 1, 1))
+    cli.add_argument("--start", type=date.fromisoformat, default=date(2025, 1, 1))
     cli.add_argument("--end", type=date.fromisoformat,
                      default=datetime.now(ZoneInfo("Asia/Kolkata")).date() - timedelta(days=1),
                      help="Inclusive; must be before today")

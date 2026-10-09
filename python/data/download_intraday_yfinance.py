@@ -42,7 +42,7 @@ def signature(path: Path) -> list[int]:
 
 def complete_session(existing: pd.DataFrame, session: pd.Timestamp) -> bool:
     expected = pd.date_range(session + pd.Timedelta(hours=9, minutes=15),
-                             session + pd.Timedelta(hours=15, minutes=15), freq="15min")
+                             session + pd.Timedelta(hours=15, minutes=25), freq="5min")
     actual = pd.DatetimeIndex(existing.loc[existing.date.dt.date == session.date(), "date"])
     return actual.equals(expected.tz_convert(actual.tz))
 
@@ -100,7 +100,7 @@ def parser() -> argparse.ArgumentParser:
     cli.add_argument("--output", type=Path, default=ROOT / "datasets/raw")
     cli.add_argument("--consolidated", type=Path, default=ROOT / "datasets/intraday.csv")
     cli.add_argument("--log-dir", type=Path, default=ROOT / "datasets/logs")
-    cli.add_argument("--days", type=int, default=1, help="Recent calendar days, 1–60; existing default: 1")
+    cli.add_argument("--days", type=int, default=7, help="Recent calendar days, 1–60")
     cli.add_argument("--batch-size", type=int, default=50)
     cli.add_argument("--timeout", type=float, default=10)
     cli.add_argument("--retries", type=int, default=1, help="Retries for transient failures only, 0–2")
@@ -128,6 +128,8 @@ def run(args) -> int:
                 path = args.output / f"{symbol}.csv"
                 old[symbol] = read_existing(path, intraday=True)
                 start = request_start(old[symbol], path, now, args.days, args.force)
+                if start == "period":
+                    old[symbol] = None
                 if start is None:
                     summary.record(symbol, "skipped", "existing file current")
                 else:
