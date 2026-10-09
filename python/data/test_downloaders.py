@@ -1,5 +1,6 @@
 """Offline ingestion checks: .venv/bin/python -m unittest discover -s python/data -v"""
 import json
+from io import StringIO
 from importlib.metadata import version
 from pathlib import Path
 import tempfile
@@ -64,6 +65,7 @@ class DownloaderTests(unittest.TestCase):
         self.assertEqual(str(common.normalize(data).date.iloc[0]), "2026-09-08 00:00:00")
         data = data.assign(DATE="2026-09-08T03:45:00Z")
         self.assertEqual(str(common.normalize(data, intraday=True).date.dt.tz), "Asia/Kolkata")
+        common.normalize(data.assign(DATE="2026-09-08T03:50:00Z"), intraday=True)
 
     def test_atomic_failure_preserves_file(self):
         path = self.root / "TCS.NS.csv"
@@ -96,7 +98,7 @@ class DownloaderTests(unittest.TestCase):
         tickers.write_text(json.dumps(["TCS.NS", "BAD.NS", "INFY.NS", "TCS.NS"]))
         return intraday.parser().parse_args(["--tickers", str(tickers), "--output", str(self.root / "raw"),
                                             "--consolidated", str(self.root / "datasets/intraday.csv"),
-                                            "--log-dir", str(self.root / "logs"), "--retries", "0"])
+                                            "--log-dir", str(self.root / "logs"), "--days", "1", "--retries", "0"])
 
     def yahoo_frame(self):
         data = bars().rename(columns=str.title).rename(columns={"Date": "Datetime"}).set_index("Datetime")
@@ -109,7 +111,7 @@ class DownloaderTests(unittest.TestCase):
             self.assertEqual(intraday.run(args), 1)
             self.assertEqual(fetch.call_count, 1)
             self.assertEqual(fetch.call_args.args[0], ["TCS.NS", "BAD.NS", "INFY.NS"])
-            self.assertEqual(fetch.call_args.kwargs["interval"], "15m")
+            self.assertEqual(fetch.call_args.kwargs["interval"], "5m")
             self.assertFalse(fetch.call_args.kwargs["auto_adjust"])
             self.assertTrue(fetch.call_args.kwargs["threads"])
         failed = json.loads((args.log_dir / "failed_intraday.json").read_text())
@@ -134,10 +136,20 @@ class DownloaderTests(unittest.TestCase):
         path.write_text(path.read_text() + "\n")
         self.assertEqual(intraday.request_start(data, path, now, 1, False), "period")
 
+    def test_full_request_replaces_untrusted_existing_interval(self):
+        args = self.yahoo_args()
+        args.tickers.write_text(json.dumps(["TCS.NS"]))
+        path = args.output / "TCS.NS.csv"
+        data = intraday.normalize_symbol(self.yahoo_frame(), "TCS.NS")
+        common.atomic_csv(data.assign(date=data.date - pd.Timedelta(days=30)), path)
+        with patch.object(intraday.yf, "download", return_value=self.yahoo_frame()["TCS.NS"]):
+            self.assertEqual(intraday.run(args), 0)
+        self.assertEqual(len(pd.read_csv(path)), len(data))
+
     def test_intraday_weekend_freshness(self):
         args = self.yahoo_args()
         friday = pd.Timestamp("2026-09-11T16:00:00+05:30")
-        dates = pd.date_range("2026-09-11 09:15", "2026-09-11 15:15", freq="15min",
+        dates = pd.date_range("2026-09-11 09:15", "2026-09-11 15:25", freq="5min",
                               tz="Asia/Kolkata")
         data = pd.DataFrame({"date": dates, "open": 10, "high": 12, "low": 9,
                              "close": 11, "volume": 100})
@@ -235,6 +247,7 @@ class DownloaderTests(unittest.TestCase):
         fetch.assert_called_once()
 
     def test_provider_dependency_contract(self):
+        self.assertEqual(intraday.parser().parse_args([]).days, 7)
         requirements = (common.ROOT / "requirements.txt").read_text().splitlines()
         self.assertIn("yfinance==1.7.0", requirements)
         self.assertIn("jugaad-data==0.35.5", requirements)
@@ -253,7 +266,7 @@ class DownloaderTests(unittest.TestCase):
 
 
     def test_legacy_session_skip_requires_all_bars(self):
-        dates = pd.date_range("2026-09-08 09:15", "2026-09-08 15:15", freq="15min", tz="Asia/Kolkata")
+        dates = pd.date_range("2026-09-08 09:15", "2026-09-08 15:25", freq="5min", tz="Asia/Kolkata")
         data = pd.DataFrame({"date": dates, "open": 10, "high": 12, "low": 9, "close": 11, "volume": 100})
         now = pd.Timestamp("2026-09-08T16:00:00+05:30")
         path = self.root / "TCS.NS.csv"
@@ -368,6 +381,13 @@ class DownloaderTests(unittest.TestCase):
         self.assertEqual(result.iloc[0].to_dict(), {
             "date": pd.Timestamp(day), "symbol": "TCS", "series": "EQ", "open": 100,
             "high": 102, "low": 99, "close": 101, "volume": 1000, "isin": "TCS-ISIN"})
+
+    def test_legacy_bhavcopy_without_isin(self):
+        day = date(2010, 1, 4)
+        raw = pd.read_csv(StringIO(self.legacy_bhavcopy(
+            day, [("TCS", "EQ", "TCS-ISIN", 101, 1000)]))).drop(columns="ISIN").to_csv(index=False)
+        result = historical.normalize_bhavcopy(raw, day)
+        self.assertEqual(result.iloc[0]["isin"], "")
 
     def test_newer_bhavcopy_normalization(self):
         day = date(2024, 7, 8)

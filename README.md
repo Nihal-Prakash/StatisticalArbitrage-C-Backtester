@@ -8,11 +8,11 @@ Install/update dependencies with `.venv/bin/python -m pip install -r requirement
 Two primary downloaders use the canonical `python/tickers.json` universe:
 
 * `.venv/bin/python python/data/download_intraday_yfinance.py`
-  Yahoo 15-minute bars, 50-symbol batches with built-in threading. The existing
-  one-day default and `datasets/raw/SYMBOL.NS.csv` location are preserved.
+  Yahoo 5-minute bars for the latest seven calendar days, in 50-symbol batches
+  with built-in threading, to `datasets/raw/SYMBOL.NS.csv`.
   Completed local ticker files are consolidated into `datasets/intraday.csv`.
   Use `--days 60` for the largest supported recent window. Yahoo does not provide
-  arbitrary historical 15-minute data; requests stay just inside its 60-day cap.
+  arbitrary historical 5-minute data; requests stay just inside its 60-day cap.
 * `.venv/bin/python python/data/download_historical_jugaad.py --start 2010-01-01`
   Daily NSE equities to `datasets/historical_daily/SYMBOL.NS.csv`. The `.NS`
   suffix is stripped only for the NSE request, never for the output filename.
